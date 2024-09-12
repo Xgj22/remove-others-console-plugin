@@ -5,6 +5,8 @@ import { parse as parse$1 } from '@vue/compiler-sfc';
 import { exec } from 'child_process';
 import fs from 'fs';
 
+const UNCOMMITTED = "Not";
+
 const execCommand = (command) => {
   return new Promise((resolve, reject) => {
     exec(command, (err, stdout, stderr) => {
@@ -34,23 +36,28 @@ async function getUserMap(url) {
     .trim()
     .split("\n")
     .reduce((acc, line) => {
-      let [numStr, hash, author, ...rest] = line.split(/\s+/);
-      let num = parseInt(numStr, 10);
-      acc[num] = author.replace("(", "").replace(")", "");
+      const num = parseInt(line.split(" ")[0], 10);
+      const author = line
+        .split(" ")
+        .filter((item) => item.includes("("))[0]
+        .trim()
+        .replace("(", "");
+      acc[num] = author;
+
       return acc;
     }, {});
 
   return map;
 }
 
-function removeConsoleNode(path, map) {
+function removeConsoleNode(path, map, startLine = 1) {
   if (
     path.node.callee.type === "MemberExpression" &&
     path.node.callee.property.name === "log"
   ) {
-    const logLine = path.node.loc.start.line;
+    const logLine = path.node.loc.start.line + startLine - 1;
     const commiter = map[logLine];
-    if (commiter !== username && commiter !== "Not") {
+    if (commiter !== username && commiter !== UNCOMMITTED) {
       path.remove();
     }
   }
@@ -62,7 +69,7 @@ function removeConsolePlugin() {
     async load(id) {
       const parseUrl = new URL(id, "file://");
       const url = parseUrl.pathname;
-      if (!url.includes("/src")) return;
+      if (url.includes("/node_modules/") || !url.includes("/src")) return;
 
       const map = await getUserMap(url);
       const isJsOrTsFile = /\.([tj]sx?|js|ts)$/.test(url);
@@ -88,6 +95,10 @@ function removeConsolePlugin() {
         // 解析 .vue 文件
         const { descriptor } = parse$1(originalContent);
 
+        const startLine =
+          descriptor.scriptSetup?.loc.start.line ||
+          descriptor.script?.loc.start.line ||
+          1;
         const scriptContent =
           descriptor.scriptSetup?.content || descriptor.script?.content || "";
         // 使用 Babel 解析脚本内容为 AST
@@ -96,7 +107,7 @@ function removeConsolePlugin() {
           plugins: ["jsx", "typescript"],
         });
         traverse(ast, {
-          CallExpression: (path) => removeConsoleNode(path, map),
+          CallExpression: (path) => removeConsoleNode(path, map, startLine),
         });
 
         const { code: modifiedScriptContent } = generator(ast);
