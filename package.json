@@ -1,14 +1,18 @@
 {
   "name": "remove-others-console-plugin",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "",
-  "main": "index.js",
-  "type": "module",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "browser": "dist/index.umd.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rollup -c"
   },
   "keywords": [],
-  "author": "",
+  "author": "Xgj22",
   "license": "ISC",
   "dependencies": {
     "@babel/generator": "^7.25.6",
@@ -18,5 +22,13 @@
   },
   "devDependencies": {
     "rollup": "^4.21.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xgj22/remove-others-console-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Xgj22/remove-others-console-plugin/issues"
+  },
+  "homepage": "https://github.com/Xgj22/remove-others-console-plugin#readme"
 }

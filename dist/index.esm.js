@@ -1,9 +1,12 @@
-import generator from '@babel/generator';
+import _generator from '@babel/generator';
 import { parse } from '@babel/parser';
-import traverse from '@babel/traverse';
+import _traverse from '@babel/traverse';
 import { parse as parse$1 } from '@vue/compiler-sfc';
 import { exec } from 'child_process';
 import fs from 'fs';
+
+const generator = _generator.default;
+const traverse = _traverse.default;
 
 const UNCOMMITTED = "Not";
 

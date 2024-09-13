@@ -1,9 +1,11 @@
-import _generator from "@babel/generator";
-import { parse as parseBabel } from "@babel/parser";
-import _traverse from "@babel/traverse";
-import { parse as parseVue } from "@vue/compiler-sfc";
-import { exec } from "child_process";
-import fs from "fs";
+'use strict';
+
+var _generator = require('@babel/generator');
+var parser = require('@babel/parser');
+var _traverse = require('@babel/traverse');
+var compilerSfc = require('@vue/compiler-sfc');
+var child_process = require('child_process');
+var fs = require('fs');
 
 const generator = _generator.default;
 const traverse = _traverse.default;
@@ -12,7 +14,7 @@ const UNCOMMITTED = "Not";
 
 const execCommand = (command) => {
   return new Promise((resolve, reject) => {
-    exec(command, (err, stdout, stderr) => {
+    child_process.exec(command, (err, stdout, stderr) => {
       if (err) {
         reject(err);
         return;
@@ -66,7 +68,7 @@ function removeConsoleNode(path, map, startLine = 1) {
   }
 }
 
-export default function removeConsolePlugin() {
+function removeConsolePlugin() {
   return {
     name: "console-remover",
     async load(id) {
@@ -80,7 +82,7 @@ export default function removeConsolePlugin() {
 
       if (isJsOrTsFile) {
         let originalContent = fs.readFileSync(url, "utf-8");
-        const ast = parseBabel(originalContent, {
+        const ast = parser.parse(originalContent, {
           sourceType: "module",
           plugins: ["jsx", "typescript"],
         });
@@ -96,7 +98,7 @@ export default function removeConsolePlugin() {
       if (isVueFile) {
         let originalContent = fs.readFileSync(url, "utf-8");
         // 解析 .vue 文件
-        const { descriptor } = parseVue(originalContent);
+        const { descriptor } = compilerSfc.parse(originalContent);
 
         const startLine =
           descriptor.scriptSetup?.loc.start.line ||
@@ -105,7 +107,7 @@ export default function removeConsolePlugin() {
         const scriptContent =
           descriptor.scriptSetup?.content || descriptor.script?.content || "";
         // 使用 Babel 解析脚本内容为 AST
-        const ast = parseBabel(scriptContent, {
+        const ast = parser.parse(scriptContent, {
           sourceType: "module",
           plugins: ["jsx", "typescript"],
         });
@@ -125,3 +127,5 @@ export default function removeConsolePlugin() {
     },
   };
 }
+
+module.exports = removeConsolePlugin;
